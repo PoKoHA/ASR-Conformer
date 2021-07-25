@@ -21,6 +21,9 @@ lite transformer with long-short range attention
 specAugment
 :https://arxiv.org/abs/1904.08779
 
+Multi-head attention with relative pos encoding
+:https://arxiv.org/abs/1901.02860
+
 https://github.com/lucidrains/conformer
 
 https://github.com/sooftware/conformer
