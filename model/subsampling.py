@@ -33,3 +33,11 @@ class Conv2dSubsampling(nn.Module):
         output_lengths -= 1
 
         return outputs, output_lengths
+
+if __name__ == "__main__":
+    test = Conv2dSubsampling(1, 3)
+    t = torch.randn(3,32,32)
+    l = torch.randn(3)
+
+    outputs, lengths = test(t, l)
+    print(outputs.size())
