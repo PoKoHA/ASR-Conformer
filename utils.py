@@ -1,5 +1,7 @@
 import numpy as np
 
+import torch.nn as nn
+
 class ScheduleAdam():
 
     def __init__(self, optimizer, hidden_dim, warm_steps):
@@ -25,3 +27,8 @@ class ScheduleAdam():
         return np.min([np.power(self.current_steps, -0.5),
                        self.current_steps * np.power(self.warm_steps, -1.5)
                        ])
+
+def init_weight(m):
+    nn.init.xavier_normal_(m.weight)
+    if m.bias is not None:
+        nn.init.constant_(m.bias, 0)

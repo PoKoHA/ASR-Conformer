@@ -13,6 +13,13 @@ Paper:https://arxiv.org/abs/2005.08100
 **FFN Module**
 ![e](https://user-images.githubusercontent.com/76771847/126898690-9369d95c-9d6f-462c-8831-59fe2a323065.png)
 
+## Update
+
+Conformer 에서는 Decoder로 LSTM만 사용
+
+=> Decoder 에 ASR-Transformer Decoder 추가
+
+
 ## Reference
 
 lite transformer with long-short range attention

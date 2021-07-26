@@ -46,6 +46,8 @@ parser.add_argument('--n-decoder-layers', type=int, default=1, help='number of p
 parser.add_argument('--decoder-dim', type=int, default=512, help='hidden size of model (default: 512)')
 parser.add_argument('--n_heads', type=int, default=8)
 parser.add_argument('--dropout', type=float, default=0.1, help='Dropout rate in training (default: 0.3)')
+parser.add_argument('--teacher-forcing', type=float, default=1.0,
+                    help='Teacher forcing ratio in decoder (default: 1.0)')
 
 # config
 parser.add_argument('--batch-size', type=int, default=32, help='Batch size in training (default: 32)')
@@ -185,7 +187,8 @@ def main_worker(gpu, ngpus_per_node, args):
             n_heads=args.n_heads,
             rnn_type=args.rnn_type,
             sos_id=SOS_token,
-            eos_id=EOS_token
+            eos_id=EOS_token,
+            teacher_forcing=args.teacher_forcing
         )
     # print("[Model]")
 
@@ -273,7 +276,7 @@ def train(model, data_loader, criterion, optimizer, args, epoch, train_sampler, 
         feat_lengths = feat_lengths.cuda(args.gpu)
 
         src_len = scripts.size(1)
-        target = scripts[:, :]
+        target = scripts[:, 1:]
         # print("target: ", target.size())
 
         logit = model(feats, feat_lengths, scripts, script_lengths)
@@ -325,7 +328,7 @@ def evaluate(model, data_loader, criterion, args, save_output=False):
             feat_lengths = feat_lengths.cuda(args.gpu)
 
             src_len = scripts.size(1)
-            target = scripts[:, :]
+            target = scripts[:, 1:]
 
             # teacher forcing 안쓰므로 scripts 필요 X
             logit = model(feats, feat_lengths, scripts, script_lengths)

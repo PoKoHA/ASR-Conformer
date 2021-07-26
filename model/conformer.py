@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from model.encoder import ConformerEncoder
-from model.decoder import DecoderRNNT
+from model.decoder import Decoder
 from model.module import Linear
 
 class Conformer(nn.Module):
@@ -36,9 +36,12 @@ class Conformer(nn.Module):
             half_step_residual=True,
             rnn_type='lstm',
             sos_id=2001,
-            eos_id=2002
+            eos_id=2002,
+            teacher_forcing=0.0
     ):
         super(Conformer, self).__init__()
+
+        self.teacher_forcing_p = teacher_forcing
         self.args = args
         self.sos_id = sos_id
         self.eos_id = eos_id
@@ -59,15 +62,17 @@ class Conformer(nn.Module):
             half_step_residual=half_step_residual,
         )
 
-        self.decoder = DecoderRNNT(
-            n_classes=n_classes,
-            hidden_dim=decoder_dim,
-            output_dim=encoder_dim,
-            n_layers=n_decoder_layers,
-            rnn_type=rnn_type,
-            dropout_p=decoder_dropout,
-            sos_id=sos_id,
-            eos_id=eos_id
+        self.decoder = Decoder(
+            args=args,
+            num_classes=n_classes,
+            d_model=decoder_dim,
+            d_ff=2048,
+            n_layers=6,
+            n_heads=8,
+            dropout_p=0.3,
+            pad_id=0,
+            sos_id=2001,
+            eos_id=2002
         )
 
         self.fc = Linear(encoder_dim, n_classes, bias=False)
@@ -78,7 +83,7 @@ class Conformer(nn.Module):
         self.encoder.update_dropout(dropout_p)
         self.decoder.update_dropout(dropout_p)
 
-    # todo ??
+    # todo CTC loss 일 때 쓰는듯?
     def joint(self, encoder_outputs, decoder_outputs):
         """
         encoder_outputs (torch.FloatTensor): A output sequence of encoder. `FloatTensor` of size
@@ -109,14 +114,18 @@ class Conformer(nn.Module):
 
     def forward(self, inputs, input_lengths, targets, target_lengths):
 
-        encoder_outputs, _ = self.encoder(inputs, input_lengths)
-        decoder_outputs, _ = self.decoder(targets, target_lengths)
+        # print("inputs", inputs.size())
+        # print("inputs_lengths", input_lengths.size())
+        # print("targets", targets.size())
+        # print("target_lengths", target_lengths.size())
+        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
+        print("encoder_outputs: ", encoder_output_lengths.size())
+        logits = self.decoder(
+            encoder_outputs, encoder_output_lengths, targets, target_lengths, self.teacher_forcing_p
+        )
 
-        outputs = self.fc(decoder_outputs)
-        # outputs = self.joint(encoder_outputs, decoder_outputs)
-        # print("decoder_outputs: ", decoder_outputs.size())
-
-        return outputs
+        print(logits.size())
+        return logits
 
 
     # @(decorator): 감싸고 있는 함수를 호출하기전/후에 추가적으로 실행하는 기능
