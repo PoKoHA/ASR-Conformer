@@ -123,7 +123,7 @@ class ConformerEncoder(nn.Module):
 
 
     def forward(self, inputs, input_lengths):
-
+        # print(" --[Encoder]--")
         outputs, output_lengths = self.conv_subsample(inputs, input_lengths)
         outputs = self.input_linear(outputs)
         outputs = self.input_dropout(outputs)

@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 import torch.nn as nn
 
@@ -63,11 +65,19 @@ class DecoderRNNT(nn.Module):
 
 
     def forward(self, inputs, input_lengths=None, hidden_states=None):
+        # print(" --[Decoder]--")
+        input_lengths = torch.sort(input_lengths, descending=True)
+        inputs_copy = inputs.new_zeros(inputs.size())
+        # print("inputs: ", inputs)
+        # print("input_lengths:", input_lengths)
+        for i1, i2 in enumerate(input_lengths[1]): # ([0, 1, 2, 3, 4, 6, 7, 5])
+            inputs_copy[i1][:] = inputs[i2][:]
 
-        embedded = self.embedding(inputs)
+        # print("inputs: ", inputs_copy)
+        embedded = self.embedding(inputs_copy)
 
         if input_lengths is not None:
-            embedded = nn.utils.rnn.pack_padded_sequence(embedded.transpose(0, 1), input_lengths.cpu())
+            embedded = nn.utils.rnn.pack_padded_sequence(embedded.transpose(0, 1), input_lengths[0].cpu())
             outputs, hidden_states = self.rnn(embedded, hidden_states)
             outputs, _ = nn.utils.rnn.pad_packed_sequence(outputs)
             outputs = self.fc(outputs.transpose(0, 1))

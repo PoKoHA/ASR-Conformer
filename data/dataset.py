@@ -16,7 +16,7 @@ def load_audio(audio_path, sample_rate):
     return signal
 
 
-class SpectrogramDataset(Dataset):
+class MelFilterBankDataset(Dataset):
 
     def __init__(self, audio_conf, dataset_path, data_list, char2index, sos_id, eos_id, normalize=False, mode='train'):
         """
@@ -26,7 +26,7 @@ class SpectrogramDataset(Dataset):
         :param char2index: character 에서 index 로 mapping 된 Dictionary
         :param normalize: Normalized by instance-wise standardazation
         """
-        super(SpectrogramDataset, self).__init__()
+        super(MelFilterBankDataset, self).__init__()
         self.audio_conf = audio_conf # dict{sample rate, window_size, window_stride}
         self.data_list = data_list # [{"wav": , "text": , "speaker_id": "}]
         self.size = len(self.data_list) # 59662
@@ -44,17 +44,16 @@ class SpectrogramDataset(Dataset):
 
     def __getitem__(self, index):
         wav_name = self.data_list[index]['wav']
-        # print("wav: " , wav_name): 41_0607_213_1_08139_05.wav
+        # print("wav: " , wav_name) # 41_0607_213_1_08139_05.wav
         audio_path = os.path.join(self.dataset_path, wav_name)
         # print("audio_path: ", audio_path): data/wavs_train/41_0607_213_1_08139_05.wav
         transcript = self.data_list[index]['text']
         # print("text: ", transcript): 예약 받나요?
 
         spect = self.parse_audio(audio_path)
-        # print("spect: ", spect.size()): Tensor[161, Frame] 161: 1+ n_fft/2 | Frame: length / stride
+        # print("spect: ", spect.size()) #
         transcript = self.parse_transcript(transcript)
-        # print("text: ", transcript): [2001, 22, 3, ..., 2002] 각 단어의 인덱스 2001(sos)
-
+        # print("text: ", transcript) #
         return spect, transcript
 
 

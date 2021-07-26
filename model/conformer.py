@@ -35,9 +35,13 @@ class Conformer(nn.Module):
             kernel_size=31,
             half_step_residual=True,
             rnn_type='lstm',
+            sos_id=2001,
+            eos_id=2002
     ):
         super(Conformer, self).__init__()
         self.args = args
+        self.sos_id = sos_id
+        self.eos_id = eos_id
 
         self.encoder = ConformerEncoder(
             args=args,
@@ -61,10 +65,12 @@ class Conformer(nn.Module):
             output_dim=encoder_dim,
             n_layers=n_decoder_layers,
             rnn_type=rnn_type,
-            dropout_p=decoder_dropout
+            dropout_p=decoder_dropout,
+            sos_id=sos_id,
+            eos_id=eos_id
         )
 
-        self.fc = Linear(encoder_dim << 1, n_classes, bias=False)
+        self.fc = Linear(encoder_dim, n_classes, bias=False)
 
 
     def update_dropout(self, dropout_p) -> None:
@@ -93,6 +99,8 @@ class Conformer(nn.Module):
             encoder_outputs = encoder_outputs.repeat([1, 1, target_length, 1])
             decoder_outputs = decoder_outputs.repeat([1, input_length, 1, 1])
 
+        # print("encoder_outputs: ", encoder_outputs.size())
+        # print("decoder_outputs: ", decoder_outputs.size())
         outputs = torch.cat((encoder_outputs, decoder_outputs), dim=-1)
         outputs = self.fc(outputs)
 
@@ -103,14 +111,17 @@ class Conformer(nn.Module):
 
         encoder_outputs, _ = self.encoder(inputs, input_lengths)
         decoder_outputs, _ = self.decoder(targets, target_lengths)
-        outputs = self.joint(encoder_outputs, decoder_outputs)
+
+        outputs = self.fc(decoder_outputs)
+        # outputs = self.joint(encoder_outputs, decoder_outputs)
+        # print("decoder_outputs: ", decoder_outputs.size())
 
         return outputs
 
 
     # @(decorator): 감싸고 있는 함수를 호출하기전/후에 추가적으로 실행하는 기능
     @torch.no_grad()
-    def decoder(self, encoder_output, max_length):
+    def decode(self, encoder_output, max_length):
         """
         Args:
             encoder_output (torch.FloatTensor): A output sequence of encoder. `FloatTensor` of size
@@ -122,6 +133,7 @@ class Conformer(nn.Module):
         pred_tokens, hidden_state = list(), None
         decoder_input = encoder_output.new_tensor([[self.decoder.sos_id]], dtype=torch.long)
 
+        print("max_length: ", max_length)
         for t in range(max_length):
             decoder_output, hidden_state = self.decoder(decoder_input, hidden_states=hidden_state)
             step_output = self.joint(encoder_output[t].view(-1), decoder_output.view(-1))
