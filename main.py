@@ -48,6 +48,7 @@ parser.add_argument('--n_heads', type=int, default=8)
 parser.add_argument('--dropout', type=float, default=0.1, help='Dropout rate in training (default: 0.3)')
 parser.add_argument('--teacher-forcing', type=float, default=1.0,
                     help='Teacher forcing ratio in decoder (default: 1.0)')
+parser.add_argument('--input-dim', type=int, default=161)
 
 # config
 parser.add_argument('--batch-size', type=int, default=32, help='Batch size in training (default: 32)')
@@ -63,8 +64,8 @@ parser.add_argument('--warm-steps', default=10000, type=int)
 # Audio Config
 parser.add_argument('--sample-rate', default=16000, type=int, help='Sampling Rate')
 parser.add_argument('--num-mels', default=80, type=int)
-parser.add_argument('--window-size', default=25, type=float, help='Window size for spectrogram')
-parser.add_argument('--window-stride', default=10, type=float, help='Window stride for spectrogram')
+parser.add_argument('--window-size', default=.02, type=float, help='Window size for spectrogram')
+parser.add_argument('--window-stride', default=.01, type=float, help='Window stride for spectrogram')
 
 # System
 parser.add_argument('--print-freq', default=1, type=int)
@@ -123,7 +124,7 @@ def main_worker(gpu, ngpus_per_node, args):
     # audio 설정
     audio_conf = dict(sample_rate=args.sample_rate, # 16,000
                       num_mel=args.num_mels, # 80
-                      window_length=args.window_size, # 25ms
+                      window_size=args.window_size, # 25ms
                       window_stride=args.window_stride) # 10ms
 
     batch_size = args.batch_size * args.num_gpu # 32 * 1
@@ -179,7 +180,7 @@ def main_worker(gpu, ngpus_per_node, args):
         model = Conformer(
             args=args,
             n_classes=len(char2index),
-            input_dim=80,# todo
+            input_dim=args.input_dim,# todo
             encoder_dim=args.encoder_dim,
             decoder_dim=args.decoder_dim,
             n_encoder_layers=args.n_encoder_layers,

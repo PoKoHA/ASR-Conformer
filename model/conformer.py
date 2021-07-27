@@ -119,12 +119,12 @@ class Conformer(nn.Module):
         # print("targets", targets.size())
         # print("target_lengths", target_lengths.size())
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        print("encoder_outputs: ", encoder_output_lengths.size())
+        # print("encoder_outputs: ", encoder_output_lengths.size())
         logits = self.decoder(
             encoder_outputs, encoder_output_lengths, targets, target_lengths, self.teacher_forcing_p
         )
 
-        print(logits.size())
+        # print(logits.size())
         return logits
 
 

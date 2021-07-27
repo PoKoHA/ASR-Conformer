@@ -1,6 +1,7 @@
 import librosa
 import numpy as np
 import os
+import scipy.signal
 
 import torch
 import torchaudio
@@ -37,7 +38,7 @@ class MelFilterBankDataset(Dataset):
         self.normalize = normalize # Train: True
         self.dataset_path = dataset_path # data/wavs_train
         self.transforms = FilterBankFeatureTransform(
-            audio_conf["num_mel"], audio_conf["window_length"], audio_conf["window_stride"]
+            audio_conf["num_mel"], audio_conf["window_size"], audio_conf["window_stride"]
         )
         self.mode = mode
 
@@ -60,7 +61,15 @@ class MelFilterBankDataset(Dataset):
     def parse_audio(self, audio_path):
         signal = load_audio(audio_path, sample_rate=self.audio_conf['sample_rate'])
 
-        feature = self.transforms(signal)
+        # feature = self.transforms(signal)
+
+        n_fft = int(self.audio_conf['sample_rate'] * self.audio_conf['window_size'])
+        window_size = n_fft
+        stride_size = int(self.audio_conf['sample_rate'] * self.audio_conf['window_stride'])
+        D = librosa.stft(signal, n_fft=n_fft, hop_length=stride_size, win_length=window_size,
+                         window=scipy.signal.windows.hamming)
+        spect, phase = librosa.magphase(D)
+        feature = np.log1p(spect)
 
         # normalize
         feature -= feature.mean()
